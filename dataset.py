@@ -28,24 +28,14 @@ class TIDataset(Dataset):
     def __getitem__(self, idx):
         waveform, sr = torchaudio.load(
             os.path.join(WAV_FILES_PATH, self.file_names[idx]))
-        window_len = int(sr * WINDOW_SIZE)  # 200
-        stride_len = int(sr * STRIDE)  # 80
-        desired_size = 64 * stride_len  # no of time frames = signal_size / stride (or hop_len)
-        # desired_size = 64 * 80
-        waveform = cut_if_necessary(waveform, desired_size)
-        waveform = pad_if_necessary(waveform, desired_size)
-        n_fft = window_len * 2 - 1
-        spectogram = torchaudio.transforms.Spectrogram(n_fft=n_fft,
-                                                       hop_length=stride_len)(
+        waveform = cut_if_necessary(waveform)
+        waveform = pad_if_necessary(waveform)
+        window = int(sr * WINDOW_SIZE // 1000)  # ms
+        stride = int(sr * STRIDE // 1000)
+        mel_spectogram = torchaudio.transforms.MelSpectrogram(n_fft=window,
+                                                              hop_length=stride,
+                                                              n_mels=FILTER_BANKS)(
             waveform)
-        # no_of_time_frame(x_axis) = signal_size / stride = 64 * 80 / 80
-        # no_of_freq(y_axis) = n_fft / 2 + 1 = window_len
-        # spectogram shape : [1, window, signal_size / stride] # [1, y, x]
-        # mel_spectogram_shape : [1, mel_filters, signal_size / stride] # [1, y, x]
-        mel_spectogram = torchaudio.transforms.MelScale(n_mels=32,
-                                                        n_stft=n_fft // 2 + 1)(
-            spectogram)
-
         label = torch.tensor(self.labels[idx], dtype=torch.long)
         return mel_spectogram, label
 
@@ -53,6 +43,6 @@ class TIDataset(Dataset):
 if __name__ == '__main__':
     training_data = TIDataset("eval")
     training_data_loader = DataLoader(training_data, batch_size=2, shuffle=True)
-    img, label = next(iter(training_data_loader))
+    label, img = next(iter(training_data_loader))
     print(len(training_data_loader), label.shape,
           img.shape)

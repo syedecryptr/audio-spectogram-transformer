@@ -4,7 +4,7 @@ import torch
 import os
 from dataset import TIDataset
 from torch.utils.data import DataLoader
-from models import VIT
+from models import Resnet
 from tqdm import tqdm
 from train_config import *
 from torch.utils.tensorboard import SummaryWriter
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         f"Starting training with {train_dataloader.__len__() * BATCH_SIZE} "
         f"training samples and {test_dataloader.__len__() * BATCH_SIZE} "
         f"test samples")
-    audionet = VIT(IMAGE_SIZE).to(DEVICE)
+    audionet = Resnet().to(DEVICE)
     start_epoch = 1
     if RESUME_TRAIN:
         audionet = torch.load(RESUME_TRAIN_PATH)
@@ -36,14 +36,13 @@ if __name__ == '__main__':
         audionet.eval()
         total_corrects = 0
         total_labels = 0
-
         with torch.no_grad():
             avg_loss = 0
             for audios, labels in tqdm(test_dataloader):
                 audios, labels = audios.to(DEVICE), labels.to(DEVICE)
                 # print(audios.shape, labels.shape)
                 y_pred = audionet(audios)
-                # print(y_pred.shape, labels.shape)
+                # print(y_pred.shape, labels.shape, torch.unique(y_pred))
                 loss = criterion(y_pred, labels)
                 # print(loss.item())
                 avg_loss += loss.item()
@@ -53,21 +52,20 @@ if __name__ == '__main__':
 
             test_loss = avg_loss / len(test_dataloader)
             writer.add_scalar('Loss/test', test_loss, epoch)
-            print("accuracy",  total_corrects / total_labels * 100)
+            # print(total_corrects, total_labels, total_corrects / total_labels * 100)
             writer.add_scalar("Accuracy/test",
                               total_corrects / total_labels * 100, epoch)
 
         audionet.train()
         avg_loss = 0
-        with torch.autograd.set_detect_anomaly(True):
-            for audios, labels in tqdm(train_dataloader):
-                audios, labels = audios.to(DEVICE), labels.to(DEVICE)
-                optimizer.zero_grad()
-                y_pred = audionet(audios)
-                loss = criterion(y_pred, labels)
-                avg_loss += loss.item()
-                loss.backward()
-                optimizer.step()
+        for audios, labels in tqdm(train_dataloader):
+            audios, labels = audios.to(DEVICE), labels.to(DEVICE)
+            optimizer.zero_grad()
+            y_pred = audionet(audios)
+            loss = criterion(y_pred, labels)
+            avg_loss += loss.item()
+            loss.backward()
+            optimizer.step()
         train_loss = avg_loss / len(train_dataloader)
         writer.add_scalar('Loss/train', train_loss, epoch)
 

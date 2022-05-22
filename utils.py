@@ -2,14 +2,14 @@ from train_config import *
 import torch.nn.functional as F
 
 
-def pad_if_necessary(waveform, desired_size):
-    if waveform.shape[1] < desired_size:
-        missing_samples = desired_size - waveform.shape[1]
+def pad_if_necessary(waveform):
+    if waveform.shape[1] < DESIRED_SIZE:
+        missing_samples = DESIRED_SIZE - waveform.shape[1]
         waveform = F.pad(waveform, (0, missing_samples))
     return waveform
 
 
-def cut_if_necessary(waveform, desired_size):
-    if waveform.shape[1] > desired_size:
-        waveform = waveform[:, :desired_size]
+def cut_if_necessary(waveform):
+    if waveform.shape[1] > DESIRED_SIZE:
+        waveform = waveform[:, :DESIRED_SIZE]
     return waveform
