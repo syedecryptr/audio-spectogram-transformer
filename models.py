@@ -1,7 +1,7 @@
 import torch
 from torchvision.models import resnet50
 from torch import nn
-
+from train_config import *
 
 class Resnet(nn.Module):
     def __init__(self):
@@ -16,7 +16,7 @@ class Resnet(nn.Module):
                                 bias=False)
         self.rest_layers = nn.Sequential(
             *list(self.resnet_model.children())[1:9])
-        self.linear = nn.Linear(in_features=2048, out_features=10)
+        self.linear = nn.Linear(in_features=2048, out_features=NO_OF_CLASSES)
         self.softmax = nn.Softmax()
 
     def forward(self, x):

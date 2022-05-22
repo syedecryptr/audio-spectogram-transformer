@@ -8,7 +8,8 @@ from models import Resnet
 from tqdm import tqdm
 from train_config import *
 from torch.utils.tensorboard import SummaryWriter
-import torch.nn as nn
+# import torch.nn as nn
+from loss import polyloss_criterion as criterion
 
 writer = SummaryWriter(os.path.join(RUNS_PATH, EXPERIMENT_NAME))
 
@@ -29,7 +30,7 @@ if __name__ == '__main__':
         audionet = torch.load(RESUME_TRAIN_PATH)
     # TODO add scheduler
     optimizer = torch.optim.Adam(audionet.parameters(), lr=LEARNING_RATE)
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
     for epoch in range(start_epoch, EPOCHS):
         print(f"\n---------------------- Epoch {epoch} ----------------------")
         # validation
@@ -67,7 +68,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
         train_loss = avg_loss / len(train_dataloader)
-        writer.add_scalar('Loss/train', train_loss, epoch)
+        writer.add_scalar('Loss/train', train_loss , epoch)
 
         if epoch % EPOCH_AFTER_SAVE_MODEL == 0:
             if not os.path.exists(MODEL_PATH):
